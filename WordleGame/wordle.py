@@ -9,7 +9,7 @@ class Wordle:
   
   # Load the list of words  
   def load_word_list(self):
-    with open('word_list.txt') as f:
+    with open('WordleGame/word_list.txt') as f:
       for l in f:
         self.wlist.append(l.rstrip())
   
@@ -22,6 +22,10 @@ class Wordle:
     return True
   
   # Take in a guess and return a score and remaining moves
+  # Evaluating scores:
+  #   0 = Letter not in word
+  #   1 = Correct letter, but in the wrong spot
+  #   2 = Correct letter, correct spot
   def guess_word(self, guess):
     # If the player is out of turns
     if self.guesses == 0:
@@ -80,7 +84,7 @@ print(f'Guessed word: queen, Result: {results}, Remaining guesses: {guesses_left
 
 results, guesses_left = w.guess_word('trunk')
 print(f'Guessed word: trunk, Result: {results}, Remaining guesses: {guesses_left}')
-
+print()
 results, guesses_left = w.guess_word('clamp')
 print(f'Guessed word: clamp, Result: {results}, Remaining guesses: {guesses_left}')
 w.reveal_word()
