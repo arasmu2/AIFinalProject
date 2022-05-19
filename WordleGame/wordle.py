@@ -1,5 +1,10 @@
 import random as rnd
 
+# Evaluating Scores
+WRONG_LETTER   = 0 # Letter not in word
+CORRECT_LETTER = 1 # Correct letter, wrong spot
+CORRECT_SPOT   = 2 # Correct letter in correct spot
+
 class Wordle:
   def __init__(self) -> None:
     self.guesses = 6
@@ -9,7 +14,7 @@ class Wordle:
   
   # Load the list of words  
   def load_word_list(self):
-    with open('WordleGame/word_list.txt') as f:
+    with open('word_list.txt') as f:
       for l in f:
         self.wlist.append(l.rstrip())
   
@@ -21,11 +26,7 @@ class Wordle:
     self.guesses = 6
     return True
   
-  # Take in a guess and return a score and remaining moves
-  # Evaluating scores:
-  #   0 = Letter not in word
-  #   1 = Correct letter, but in the wrong spot
-  #   2 = Correct letter, correct spot
+  # Take in a guess and return an Evaluating score and remaining moves
   def guess_word(self, guess):
     # If the player is out of turns
     if self.guesses == 0:
@@ -39,20 +40,20 @@ class Wordle:
     
     # If the word has been guessed correctly
     if guess == self.active_word:
-      return [2,2,2,2,2], self.guesses-1
+      return [CORRECT_SPOT for _ in range(5)], self.guesses-1
     
     else:
-      ret = [0,0,0,0,0]
+      ret = [WRONG_LETTER for _ in range(5)]
       
       # Look for correct letters that are in the wrong place
       for i in range(5):
         if guess[i] in self.active_word:
-          ret[i] = 1
+          ret[i] = CORRECT_LETTER
       
       # Look for correct letters that are in the right place
       for i in range(5):
         if self.active_word[i] == guess[i]:
-          ret[i] = 2
+          ret[i] = CORRECT_SPOT
       
       # Decrement the guess counter
       self.guesses = self.guesses - 1
@@ -63,28 +64,150 @@ class Wordle:
     print(f'The word was: {self.active_word}')
     self.guesses = 0
       
-      
-       
-w = Wordle() 
-w.start_game()
-results, guesses_left = w.guess_word('prose')
-print(f'Guessed word: prose, Result: {results}, Remaining guesses: {guesses_left}')
+class State():
+  def __init__(self, previous=None):
+    self.previous = previous # pointer to previous state
+    self.guess = ''          # guess leading to this state
+    self.rejected = []       # letters guessed but are not in word
+    self.wrong_spot = []     # correct letters in wrong spots
+    self.correct = []        # correct letters in the right spot, (index, char)
+    self.unguessed_words = []
 
-results, guesses_left = w.guess_word('thing')
-print(f'Guessed word: thing, Result: {results}, Remaining guesses: {guesses_left}')
+  def next(self, result, guess):
+    '''
+    Creates the next state after this one given the updated information
+      result (int[]): results from a guess
+      guess (string): word guessedd
+      Return: State
+    '''
+    if results == [-1, -1, -1, -1, -1]:
+      return self
 
-results, guesses_left = w.guess_word('dulce')
-print(f'Guessed word: dulce, Result: {results}, Remaining guesses: {guesses_left}')
+    next = State(self)
+    next.unguessed_words = self.unguessed_words.copy()
+    next.guess = guess
+    for x in range(5):
+      if results[x] == CORRECT_SPOT:
+        next.correct.append((x, guess[x]))
+        next.remove_words_without_at(guess[x], x)
+      elif results[x] == CORRECT_LETTER:
+        next.wrong_spot.append(guess[x])
+        next.remove_words_without(guess[x])
+      elif results[x] == WRONG_LETTER:
+        next.rejected.append(guess[x])
+        next.remove_words_with(guess[x])
 
-results, guesses_left = w.guess_word('frost')
-print(f'Guessed word: frost, Result: {results}, Remaining guesses: {guesses_left}')
+    return next
 
-results, guesses_left = w.guess_word('queen')
-print(f'Guessed word: queen, Result: {results}, Remaining guesses: {guesses_left}')
+  def remove_words_with(self, c):
+    '''
+    Filters guess list with words that contain c
+      c (char): character that must not be included
+    '''
+    for word in self.unguessed_words:
+      if c in word:
+        self.unguessed_words.remove(word)
 
-results, guesses_left = w.guess_word('trunk')
-print(f'Guessed word: trunk, Result: {results}, Remaining guesses: {guesses_left}')
-print()
-results, guesses_left = w.guess_word('clamp')
-print(f'Guessed word: clamp, Result: {results}, Remaining guesses: {guesses_left}')
-w.reveal_word()
+  def remove_words_without(self, c):
+    '''
+    Filters guess list with words that don't contain c
+      c (char): required character
+    '''
+    for word in self.unguessed_words:
+      if c not in word:
+        self.unguessed_words.remove(word)
+
+  def remove_words_without_at(self, c, index):
+    '''
+    Filters guess list without c at index
+      c (char): required character
+      index (int): index of requred character
+    '''
+    for word in self.unguessed_words:
+      if word[index] is not c:
+        self.unguessed_words.remove(word)
+
+# These methods are probably not necessary, but they may be helpful for outputting information
+  def all_guesses(self):
+    '''
+    Returns a list of all guessed words so far.
+      Returns: string[]
+    '''
+    guesses = []
+    guesses.append(self.guess)
+    p = self.previous
+    while p is not None:
+      guesses.append(p.guess)
+      p = p.previous
+    return guesses
+
+  def all_rejected(self):
+    '''
+    Returns a list of all rejected characters so far
+      Returns: char[]
+    '''
+    r = []
+    r.extend(self.rejected)
+    p = self.previous
+    while p is not None:
+      r.extend(p.rejected)
+      p = p.previous
+    return r
+
+  def all_wrong_spot(self):
+    '''
+    Returns a list of all the right characters in the wrong spots so far
+      Returns: char[]
+    '''
+    r = []
+    r.extend(self.wrong_spot)
+    p = self.previous
+    while p is not None:
+      r.extend(p.wrong_spot)
+      p = p.previous
+    return r
+
+  def all_correct(self):
+    '''
+    Returns a list of all the right characters in the right spots so far
+      Returns: char[]
+    '''
+    r = []
+    r.extend(self.correct)
+    p = self.previous
+    while p is not None:
+      r.extend(p.correct)
+      p = p.previous
+    return r
+
+  def print_all(self):
+    print('Guesses:', self.all_guesses())
+    print('Rejected:', sorted(set(self.all_rejected())))
+    print('Wrong Spots:', sorted(set(self.all_wrong_spot())))
+    print('Correct:', sorted(set(self.all_correct())))
+
+  def __repr__(self):
+    return f"State(Previous: {self.previous is not None}, Guess: '{self.guess}', Rejected: {self.rejected}, Wrong Spots: {self.wrong_spot}, Correct: {self.correct}, Unguessed Words left: {len(self.unguessed_words)})"
+
+
+
+if __name__ == '__main__':
+
+  s = State() 
+  w = Wordle()
+  s.unguessed_words = w.wlist # Should probably write a function for this, just wanted to do it this way for testing
+  w.start_game()
+  guesses = ['prose', 'thing', 'dulce', 'frost', 'queen', 'trunk', 'clamp']
+
+  guesses_left = 5
+  for g in guesses:
+    results, guesses_left = w.guess_word(g)
+    s = s.next(results, g)
+    print(f'Guessed word: {g}, Result: {results}, Remaining guesses: {guesses_left}')
+    print(s, '\n')
+  print('Remaining words:', s.unguessed_words)
+  print('Remaining words contains answer:', w.active_word in s.unguessed_words)
+  print('\n')
+  s.print_all()
+
+  w.reveal_word()
