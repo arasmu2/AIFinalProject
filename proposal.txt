@@ -7,16 +7,13 @@ Group Members:
 	Jeremiah Tilse
 	Sharon Oba 
 
-Proposal is to build an AI that can play Wordle on the NY Times website, by interacting with the elements of the page.
+Proposal is to build an AI search algorithm that that can play Wordle.  Since it is difficult to probe a Wordle website thousands of times for the agent's learning mechanism, teammembers will build a python based Wordle game that selects a random 5 letter word.  The word guessing agent will determine the word of the game by sequence of guesses that is based on heuristic search.
 
-The project plans to use Python, and the Selenium library to interact with the site and we may use Spyder, PyCharm for IDE to write python.
+There are a few components that need implementation.  1)Create a data structure for the 5 letter words which would impact the search time and it will likely be a b-tree in alphabetical order or weighted by popularity of letters in the word.  2)Create and explore different heurstic options 3) We will explore similar search algorithms including the pruning method.  4)simple version of the game was already completed by Erin.   The algorithm performance will be quantified by 1)number of tries it took to find the correct word over average of 30-50 words 2)how long the search took to find the word.
 
-Early work will go into probing the site to find which words are in the list of acceptable guesses.  A tree will be used, with a null node, that will branch 26 times at each level, such that the level number is the position of the letter.  When probing, any leaf or even branch, that is determined to not be part of a valid guess will be eliminated.  
+Because wordle and other word games are very popular, a comprehensive list of 5 letter words was found.  Each game will use a copy of the list, and depending on the search pattern will traverse the tree for each attempt.  If a letter is determined to not be part of the solution for that day, it will be pruned from the tree.  If a letter is in the puzzle, but in the wrong location, all nodes with that letter, at that depth will be removed, and depending on the search heuristic, will be given additional weight such that it must be tried in another location.  If a letter is determined to be in the correct position, then all other options at that depth will be removed.  The heruistics will be based on location and if the letter exists in the word.  Minimum heuristics will be zero where all letters are in the correct position.  If the letter is wrong it is assigned more points, compared to if the letter exists but is in wrong place.  
 
-After this list is determined.  Each game will use a copy of the list, and depending on the search pattern will traverse the tree for each attempt.  If a letter is determined to not be part of the solution for that day, it will be pruned from the tree.  If a letter is in the puzzle, but in the wrong location, all nodes with that letter, at that depth will be removed, and depending on the search heuristic, will be given additional weight such that it must be tried in another location.  If a letter is determined to be in the correct position, then all other options at that depth will be removed.  The heruistics will be based on location and if the letter exists in the word.  Minimum heuristics will be zero where all letters are in the correct position.  If the letter is wrong it is assigned more pts, compared to if the letter exists but is in wrong place.  
-
-There are a few components that need implementation.  1)Create a data structure for the 5 letter words which would impact the search time and it will likely be a b-tree in alphabetical order.  2)Create and explore different heurstic options 3) We will explore similar search algorithms including the pruning method.  4)simple version of the game so we can test the algorithm.   The algorithm performance will be quantified by 1)number of tries it took to find the correct word over average of 30-50 words 2)how long the search took to find the word.
-
+The project plans to use Python, and we may use Spyder, PyCharm for IDE to write python.  We will utilize version control using github.
 
 Search patterns:
 
@@ -26,7 +23,7 @@ Another could choose the next letter based on the additional branches from that 
 
 Also consider giving vowels higher weight, until they pruned from the tree.
 
-Also consider first guess being at random, or with some randomness, giving weight to words that have more diversity in vowels.
+Also consider first guess being at random, or giving weight to words that have more diversity in vowels and other popular letters such as 's'.
 
 Refereces:
 5 Letter WordLists
