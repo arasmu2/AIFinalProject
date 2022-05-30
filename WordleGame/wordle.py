@@ -185,13 +185,13 @@ class State():
     return r
   
   def heuristics(self):
-    num = len(s.unguessed_words)
-    word_stack = pd.DataFrame({'words': pd.Series(s.unguessed_words), 'h': pd.Series((np.zeros(num)), dtype=float)})
+    num = len(self.unguessed_words)
+    word_stack = pd.DataFrame({'words': pd.Series(self.unguessed_words), 'h': pd.Series((np.zeros(num)), dtype=float)})
 
     for n in range(0, num):
       h = 10
       compare_to = list(w.active_word)
-      guess = list(s.unguessed_words[n])
+      guess = list(self.unguessed_words[n])
       for i in range(0, 5):
         if (results[i] == 2):
           if (guess[i] == compare_to[i]):
@@ -201,13 +201,13 @@ class State():
             if (guess[j] == compare_to[i]):
               h = h - 1
         else:
-          l_value = w.lprob.loc[s.unguessed_words[n][i]]  # find probabability
+          l_value = w.lprob.loc[self.unguessed_words[n][i]]  # find probabability
           h = h - l_value
 
       word_stack.iloc[n, 1] = h
     column = word_stack["h"]
     min_h = column.idxmin()
-    print('best guess', word_stack.iloc[min_h, 0], word_stack.iloc[min_h, 1])
+    print('best guess', word_stack.iloc[min_h, 0], 'heuristic=', word_stack.iloc[min_h, 1])
     return(word_stack.iloc[min_h, 0])
   
   def print_all(self):
@@ -238,7 +238,6 @@ def simple_test():
     #input next word based on heuristics
     high_pct = s.heuristics()
     guesses[6-guesses_left]=high_pct
-    print('heuristic guess', high_pct)
     if(high_pct == w.active_word):
       print('You are correct!!')  
   print('Remaining words:', s.unguessed_words)
