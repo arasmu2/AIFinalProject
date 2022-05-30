@@ -73,7 +73,7 @@ class State():
     self.correct = []        # correct letters in the right spot, (index, char)
     self.unguessed_words = []
 
-  def next(self, result, guess):
+  def next(self, results, guess):
     '''
     Creates the next state after this one given the updated information
       result (int[]): results from a guess
@@ -87,6 +87,7 @@ class State():
     next.unguessed_words = self.unguessed_words.copy()
     next.guess = guess
     for x in range(5):
+      print(x)
       if results[x] == CORRECT_SPOT:
         next.correct.append((x, guess[x]))
         next.remove_words_without_at(guess[x], x)
@@ -190,9 +191,8 @@ class State():
     return f"State(Previous: {self.previous is not None}, Guess: '{self.guess}', Rejected: {self.rejected}, Wrong Spots: {self.wrong_spot}, Correct: {self.correct}, Unguessed Words left: {len(self.unguessed_words)})"
 
 
-
-if __name__ == '__main__':
-
+# Function for performing a simple test
+def simple_test():
   s = State() 
   w = Wordle()
   s.unguessed_words = w.wlist # Should probably write a function for this, just wanted to do it this way for testing
@@ -209,5 +209,30 @@ if __name__ == '__main__':
   print('Remaining words contains answer:', w.active_word in s.unguessed_words)
   print('\n')
   s.print_all()
-
   w.reveal_word()
+
+
+# Function for a human player to play the game
+def human_play():
+  state = State()
+  wordle = Wordle()
+  state.unguessed_words = wordle.wlist
+  wordle.start_game()
+  guesses = 0
+  while guesses < 6:
+    guess = input("Enter guess: ")
+    results = wordle.guess_word(guess)
+    state = state.next(results, guess)
+    print(f'Guessed word: {guess}, Result: {results}')
+  print('Remaining words:', state.unguessed_words)
+  print('Remaining words contains answer:', wordle.active_word in state.unguessed_words)
+  print('\n')
+  state.print_all()
+
+  wordle.reveal_word()
+   
+  
+
+if __name__ == '__main__':
+  human_play()
+  
