@@ -186,7 +186,6 @@ class State():
     return r
   
   def heuristics(self):
-
     num = len(s.unguessed_words)
     word_stack = pd.DataFrame({'words': pd.Series(s.unguessed_words), 'h': pd.Series((np.zeros(num)), dtype=float)})
 
@@ -266,11 +265,10 @@ def human_play():
   print('Remaining words contains answer:', wordle.active_word in state.unguessed_words)
   print('\n')
   state.print_all()
-
   wordle.reveal_word()
    
   
 
 if __name__ == '__main__':
   human_play()
-  
+
