@@ -91,7 +91,6 @@ class State():
     next.unguessed_words = self.unguessed_words.copy()
     next.guess = guess
     for x in range(5):
-      print(x)
       if results[x] == CORRECT_SPOT:
         next.correct.append((x, guess[x]))
         next.remove_words_without_at(guess[x], x)
