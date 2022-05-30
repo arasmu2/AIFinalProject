@@ -1,4 +1,6 @@
 import random as rnd
+import pandas as pd
+import numpy as np
 
 # Evaluating Scores
 WRONG_LETTER   = 0 # Letter not in word
@@ -11,6 +13,8 @@ class Wordle:
     self.active_word = ''
     self.wlist = []
     self.load_word_list()
+    self.lprob = pd.read_csv('letter_prob.csv', header=0, index_col='Letter')
+
   
   # Load the list of words  
   def load_word_list(self):
@@ -180,7 +184,34 @@ class State():
       r.extend(p.correct)
       p = p.previous
     return r
+  
+  def heuristics(self):
 
+    num = len(s.unguessed_words)
+    word_stack = pd.DataFrame({'words': pd.Series(s.unguessed_words), 'h': pd.Series((np.zeros(num)), dtype=float)})
+
+    for n in range(0, num):
+      h = 10
+      compare_to = list(w.active_word)
+      guess = list(s.unguessed_words[n])
+      for i in range(0, 5):
+        if (results[i] == 2):
+          if (guess[i] == compare_to[i]):
+            h = h - 2
+        elif (results[i] == 1):
+          for j in range(0, 5):
+            if (guess[j] == compare_to[i]):
+              h = h - 1
+        else:
+          l_value = w.lprob.loc[s.unguessed_words[n][i]]  # find probabability
+          h = h - l_value
+
+      word_stack.iloc[n, 1] = h
+    column = word_stack["h"]
+    min_h = column.idxmin()
+    print('best guess', word_stack.iloc[min_h, 0], word_stack.iloc[min_h, 1])
+    return(word_stack.iloc[min_h, 0])
+  
   def print_all(self):
     print('Guesses:', self.all_guesses())
     print('Rejected:', sorted(set(self.all_rejected())))
@@ -197,7 +228,7 @@ def simple_test():
   w = Wordle()
   s.unguessed_words = w.wlist # Should probably write a function for this, just wanted to do it this way for testing
   w.start_game()
-  guesses = ['prose', 'thing', 'dulce', 'frost', 'queen', 'trunk', 'clamp']
+  guesses = ['audio', 'thing', 'dulce', 'frost', 'queen', 'trunk', 'clamp']
 
   guesses_left = 5
   for g in guesses:
@@ -205,6 +236,13 @@ def simple_test():
     s = s.next(results, g)
     print(f'Guessed word: {g}, Result: {results}, Remaining guesses: {guesses_left}')
     print(s, '\n')
+    
+    #input next word based on heuristics
+    high_pct = s.heuristics()
+    guesses[6-guesses_left]=high_pct
+    print('heuristic guess', high_pct)
+    if(high_pct == w.active_word):
+      print('You are correct!!')  
   print('Remaining words:', s.unguessed_words)
   print('Remaining words contains answer:', w.active_word in s.unguessed_words)
   print('\n')
