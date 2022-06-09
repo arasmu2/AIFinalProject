@@ -44,9 +44,9 @@ class Game:
       message = 'Game over, no guesses left'
       return [-1, -1, -1, -1, -1]
     
-#    if guess not in self.wlist:
-#      print("Word is not in list.")
-#      return [-1,-1,-1,-1,-1]
+    if guess not in self.wlist:
+      print("Word is not in list.")
+      return [-1,-1,-1,-1,-1]
 
     # If the guessed word is not 5 letters long
     if len(guess) != 5:
