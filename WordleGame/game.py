@@ -28,7 +28,6 @@ class Game:
     l = len(self.wlist)
     w = rnd.randint(0, l)
     self.active_word = self.wlist[w]
-    self.active_word = 'beets'
     self.guesses = 6
     while self.guesses != 0:
       results = self.guess_word(input("Enter guess: "))
