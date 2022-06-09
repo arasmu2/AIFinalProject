@@ -2,6 +2,8 @@ import random as rnd
 import pandas as pd
 import numpy as np
 
+from game import Game
+
 # Evaluating Scores
 WRONG_LETTER   = 0 # Letter not in word
 CORRECT_LETTER = 1 # Correct letter, wrong spot
@@ -18,15 +20,15 @@ class Wordle:
   
   # Load the list of words  
   def load_word_list(self):
-    with open('word_list.txt') as f:
-      for l in f:
-        self.wlist.append(l.rstrip())
+    with open('word_list.txt') as file:
+      for word in file:
+        self.wlist.append(word.rstrip())
   
   # Start a new game by choosing a random word and resetting the guess counter
   def start_game(self):
-    l = len(self.wlist)
-    w = rnd.randint(0, l)
-    self.active_word = self.wlist[w]
+    length = len(self.wlist)
+    i = rnd.randint(0, length)
+    self.active_word = self.wlist[i]
     self.guesses = 6
     return True
   
@@ -34,12 +36,12 @@ class Wordle:
   def guess_word(self, guess):
     # If the player is out of turns
     if self.guesses == 0:
-      print(f'Game over, no guesses left')
+      print('Game over, no guesses left')
       return [-1, -1, -1, -1, -1], 0
   
     # If the guessed word is not 5 letters long
     if len(guess) != 5:
-      print(f'Word is not 5 letters')
+      print('Word is not 5 letters')
       return [-1, -1, -1, -1, -1], self.guesses
     
     # If the word has been guessed correctly
@@ -61,7 +63,7 @@ class Wordle:
       
       # Decrement the guess counter
       self.guesses = self.guesses - 1
-      return ret, self.guesses
+      return ret
     
   # Reveal the active word and set guess counter to zero
   def reveal_word(self):
@@ -72,7 +74,7 @@ class State():
   def __init__(self, previous=None):
     self.previous = previous # pointer to previous state
     self.guess = ''          # guess leading to this state
-    self.rejected = []       # letters guessed but are not in word
+    self.rejected = []       # letters guessed but are not in solution
     self.wrong_spot = []     # correct letters in wrong spots
     self.correct = []        # correct letters in the right spot, (index, char)
     self.unguessed_words = []
@@ -184,14 +186,14 @@ class State():
       p = p.previous
     return r
   
-  def heuristics(self):
-    num = len(s.unguessed_words)
-    word_stack = pd.DataFrame({'words': pd.Series(s.unguessed_words), 'h': pd.Series((np.zeros(num)), dtype=float)})
+  def heuristics(self, game, results):
+    num = len(self.unguessed_words)
+    word_stack = pd.DataFrame({'words': pd.Series(self.unguessed_words), 'h': pd.Series((np.zeros(num)), dtype=float)})
 
     for n in range(0, num):
       h = 10
-      compare_to = list(w.active_word)
-      guess = list(s.unguessed_words[n])
+      compare_to = list(game.active_word)
+      guess = list(self.unguessed_words[n])
       for i in range(0, 5):
         if (results[i] == 2):
           if (guess[i] == compare_to[i]):
@@ -201,7 +203,7 @@ class State():
             if (guess[j] == compare_to[i]):
               h = h - 1
         else:
-          l_value = w.lprob.loc[s.unguessed_words[n][i]]  # find probabability
+          l_value = game.lprob.loc[self.unguessed_words[n][i]]  # find probabability
           h = h - l_value
 
       word_stack.iloc[n, 1] = h
@@ -222,52 +224,60 @@ class State():
 
 # Function for performing a simple test
 def simple_test():
-  s = State() 
-  w = Wordle()
-  s.unguessed_words = w.wlist # Should probably write a function for this, just wanted to do it this way for testing
-  w.start_game()
-  guesses = ['audio', 'thing', 'dulce', 'frost', 'queen', 'trunk', 'clamp']
+  state = State() 
+  game = Wordle()
+  state.unguessed_words = game.wlist # Should probably write a function for this, just wanted to do it this way for testing
+  game.start_game()
+  guesses = ['audio']
 
-  guesses_left = 5
   for g in guesses:
-    results, guesses_left = w.guess_word(g)
-    s = s.next(results, g)
-    print(f'Guessed word: {g}, Result: {results}, Remaining guesses: {guesses_left}')
-    print(s, '\n')
+    results = game.guess_word(state.heuristics(game, results))
+    if game.guesses != 0:
+      state = state.next(results, g)
+    print(f'Guessed word: {g}, Result: {results}, Remaining guesses: {game.guesses}')
+    print(state, '\n')
     
     #input next word based on heuristics
-    high_pct = s.heuristics()
-    guesses[6-guesses_left]=high_pct
+    high_pct = state.heuristics(game, results)
+    guesses = guesses.append(high_pct)
     print('heuristic guess', high_pct)
-    if(high_pct == w.active_word):
-      print('You are correct!!')  
-  print('Remaining words:', s.unguessed_words)
-  print('Remaining words contains answer:', w.active_word in s.unguessed_words)
+    if(high_pct == game.active_word):
+      print('You are correct!!')
+      game.guesses = 0
+  print('Remaining words:', state.unguessed_words)
+  print('Remaining words contains answer:', game.active_word in state.unguessed_words)
   print('\n')
-  s.print_all()
-  w.reveal_word()
+  state.print_all()
+  game.reveal_word()
 
 
 # Function for a human player to play the game
 def human_play():
   state = State()
-  wordle = Wordle()
-  state.unguessed_words = wordle.wlist
-  wordle.start_game()
+  game = Wordle()
+  state.unguessed_words = game.wlist
+  game.start_game()
   guesses = 0
   while guesses < 6:
     guess = input("Enter guess: ")
-    results = wordle.guess_word(guess)
+    results = game.guess_word(guess)
     state = state.next(results, guess)
     print(f'Guessed word: {guess}, Result: {results}')
   print('Remaining words:', state.unguessed_words)
-  print('Remaining words contains answer:', wordle.active_word in state.unguessed_words)
+  print('Remaining words contains answer:', game.active_word in state.unguessed_words)
   print('\n')
   state.print_all()
-  wordle.reveal_word()
+  game.reveal_word()
    
   
 
 if __name__ == '__main__':
-  human_play()
+
+  game = Game() 
+  game.start_game()
+  while game.guesses != 0:
+    game.print_board()
+    results = game.guess_word(input("Enter guess: "))
+    print(f'Result: {results}, Remaining guesses: {game.guesses}')
+  game.reveal_word()   
 
