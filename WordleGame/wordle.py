@@ -275,9 +275,4 @@ if __name__ == '__main__':
 
   game = Game() 
   game.start_game()
-  while game.guesses != 0:
-    game.print_board()
-    results = game.guess_word(input("Enter guess: "))
-    print(f'Result: {results}, Remaining guesses: {game.guesses}')
-  game.reveal_word()   
 

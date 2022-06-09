@@ -28,23 +28,30 @@ class Game:
     l = len(self.wlist)
     w = rnd.randint(0, l)
     self.active_word = self.wlist[w]
+    self.active_word = 'beets'
     self.guesses = 6
+    while self.guesses != 0:
+      results = self.guess_word(input("Enter guess: "))
+      print(f'Result: {results}, Remaining guesses: {self.guesses}')
+    self.reveal_word()   
+
     return True
 
   # Take in a guess and return a score and remaining moves
   def guess_word(self, guess):
+    message = ''
     # If the player is out of turns
     if self.guesses == 0:
-      print('Game over, no guesses left')
+      message = 'Game over, no guesses left'
       return [-1, -1, -1, -1, -1]
     
-    if guess not in self.wlist:
-      print("Word is not in list.")
-      return [-1,-1,-1,-1,-1]
+#    if guess not in self.wlist:
+#      print("Word is not in list.")
+#      return [-1,-1,-1,-1,-1]
 
     # If the guessed word is not 5 letters long
     if len(guess) != 5:
-      print('Word is not 5 letters')
+      message = 'Word is not 5 letters'
       return [-1, -1, -1, -1, -1]
 
     
@@ -52,9 +59,9 @@ class Game:
 
     # If the word has been guessed correctly
     if guess == self.active_word:
-      print('\x1b[6;30;42m' + 'Correct!' + '\x1b[0m')
-      self.guesses = 0
+      message = '\x1b[6;30;42m' + 'Correct!' + '\x1b[0m'
       result = [2,2,2,2,2]
+      self.guesses = 0
 
     else:
       result = [0,0,0,0,0]
@@ -72,6 +79,8 @@ class Game:
       # Decrement the guess counter
       self.guesses = self.guesses - 1
     self.results.append(result)
+    self.print_board()
+    print(message)
     return result
 
   # Reveal the active word and set guess counter to zero
@@ -86,11 +95,20 @@ class Game:
     for word in self.guessed_words:
       format = []
       result = self.results[index]
-      for i in range(0,5):
+      for i in range(0,5):        
         if result[i] == CORRECT_SPOT:
           format.append('\x1b[6;30;42m'+word[i]+'\x1b[0m')
         elif result[i] == CORRECT_LETTER:
-          format.append('\x1b[0;30;43m'+word[i]+'\x1b[0m')
+          check = word[i]
+          num_actual = self.active_word.count(check)
+          num = 0
+          for j in range(0,5):
+            if self.active_word[j] == check and result[j] == CORRECT_SPOT:
+              num = num + 1
+          if num == num_actual:
+            format.append(word[i])
+          else:
+            format.append('\x1b[0;30;43m'+word[i]+'\x1b[0m')    
         else: format.append(word[i])
       print(f"|{format[0]}|{format[1]}|{format[2]}|{format[3]}|{format[4]}|")
       print("-----------")
