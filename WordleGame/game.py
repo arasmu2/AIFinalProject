@@ -1,7 +1,6 @@
 import random as rnd
 
 
-
 # Evaluating Scores
 WRONG_LETTER   = 0 # Letter not in word
 CORRECT_LETTER = 1 # Correct letter, wrong spot
@@ -33,7 +32,22 @@ class Game:
       results = self.guess_word(input("Enter guess: "))
       print(f'Result: {results}, Remaining guesses: {self.guesses}')
     self.reveal_word()   
+    return True
 
+  # Start a new game by choosing a random word and resetting the guess counter
+  def play(self, player):
+    if player.kind == "HUMAN":
+      return self.start_game()
+    l = len(self.wlist)
+    w = rnd.randint(0, l)
+    self.active_word = self.wlist[w]
+    self.guesses = 6
+    while self.guesses != 0:
+      guess = player.get_guess(self.wlist)
+      result = self.guess_word(guess)
+      print(f'Result: {result}, Remaining guesses: {self.guesses}')
+      player.trim_list(result, guess)
+    self.reveal_word()   
     return True
 
   # Take in a guess and return a score and remaining moves

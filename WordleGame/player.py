@@ -1,10 +1,57 @@
-import random
+import random 
 import pandas as pd
 import numpy as np
 
-from game import Game
 from game import WRONG_LETTER, CORRECT_LETTER, CORRECT_SPOT
-from player import Computer, Rando
+
+class Player(object):
+  def __init__(self) -> None:
+    self.kind = "HUMAN"
+    self.letter_lists = ["abcdefghijklmnopqrstuvwxyz",]*5
+    self.wrong_place = ''
+
+  def trim_list(self, result, guess):
+    for i in range(0,5):
+      if result[i] == CORRECT_SPOT:
+        self.letter_lists[i] = guess[i]
+      if result[i] == CORRECT_LETTER:
+        self.letter_lists[i] = self.letter_lists[i].replace(guess[i], '')
+        self.wrong_place = self.wrong_place + guess[i]
+      if result[i] == WRONG_LETTER:
+        for j in range(0,5):
+          self.letter_lists[j] = self.letter_lists[j].replace(guess[i],'') 
+    #  print(guess[i], result[i], self.letter_lists[i])
+
+
+
+class Computer(Player):
+  def __init__(self) -> None:
+    self.kind = "COMPUTER"
+    self.letter_lists = ["abcdefghijklmnopqrstuvwxyz",]*5
+
+
+class Rando(Player):
+  def __init__(self) -> None:
+    self.kind = "RANDOM"
+    self.letter_lists = ["abcdefghijklmnopqrstuvwxyz",]*5
+    self.wrong_place = ''
+
+    
+  def get_guess(self, word_list):
+    guess = ''
+    while guess not in word_list:
+      guess = ''
+      for i in range(0,5):
+        list = self.letter_lists[i]
+        index = random.randrange(0,len(list))
+        letter = list[index]
+        guess = guess + letter
+      for j in self.wrong_place:
+        if j not in guess:
+          guess = ''
+    return guess
+
+
 
 class State():
   def __init__(self, previous=None):
@@ -18,8 +65,8 @@ class State():
   def next(self, results, guess):
     '''
     Creates the next state after this one given the updated information
-      result (int[]): results from a guess
-      guess (string): word guessedd
+      results (int[]): results from a guess
+      guess (string): word guessed
       Return: State
     '''
     if results == [-1, -1, -1, -1, -1]:
@@ -69,58 +116,6 @@ class State():
       if word[index] is not c:
         self.unguessed_words.remove(word)
 
-# These methods are probably not necessary, but they may be helpful for outputting information
-  def all_guesses(self):
-    '''
-    Returns a list of all guessed words so far.
-      Returns: string[]
-    '''
-    guesses = []
-    guesses.append(self.guess)
-    p = self.previous
-    while p is not None:
-      guesses.append(p.guess)
-      p = p.previous
-    return guesses
-
-  def all_rejected(self):
-    '''
-    Returns a list of all rejected characters so far
-      Returns: char[]
-    '''
-    r = []
-    r.extend(self.rejected)
-    p = self.previous
-    while p is not None:
-      r.extend(p.rejected)
-      p = p.previous
-    return r
-
-  def all_wrong_spot(self):
-    '''
-    Returns a list of all the right characters in the wrong spots so far
-      Returns: char[]
-    '''
-    r = []
-    r.extend(self.wrong_spot)
-    p = self.previous
-    while p is not None:
-      r.extend(p.wrong_spot)
-      p = p.previous
-    return r
-
-  def all_correct(self):
-    '''
-    Returns a list of all the right characters in the right spots so far
-      Returns: char[]
-    '''
-    r = []
-    r.extend(self.correct)
-    p = self.previous
-    while p is not None:
-      r.extend(p.correct)
-      p = p.previous
-    return r
   
   def heuristics(self, game, results):
     num = len(self.unguessed_words)
@@ -156,60 +151,3 @@ class State():
 
   def __repr__(self):
     return f"State(Previous: {self.previous is not None}, Guess: '{self.guess}', Rejected: {self.rejected}, Wrong Spots: {self.wrong_spot}, Correct: {self.correct}, Unguessed Words left: {len(self.unguessed_words)})"
-
-
-# Function for performing a simple test
-def simple_test():
-  state = State() 
-  game = Game()
-  state.unguessed_words = game.wlist # Should probably write a function for this, just wanted to do it this way for testing
-  game.start_game()
-  guesses = ['audio']
-
-  for g in guesses:
-    results = game.guess_word(state.heuristics(game, results))
-    if game.guesses != 0:
-      state = state.next(results, g)
-    print(f'Guessed word: {g}, Result: {results}, Remaining guesses: {game.guesses}')
-    print(state, '\n')
-    
-    #input next word based on heuristics
-    high_pct = state.heuristics(game, results)
-    guesses = guesses.append(high_pct)
-    print('heuristic guess', high_pct)
-    if(high_pct == game.active_word):
-      print('You are correct!!')
-      game.guesses = 0
-  print('Remaining words:', state.unguessed_words)
-  print('Remaining words contains answer:', game.active_word in state.unguessed_words)
-  print('\n')
-  state.print_all()
-  game.reveal_word()
-
-
-# Function for a human player to play the game
-def human_play():
-  state = State()
-  game = Game()
-  state.unguessed_words = game.wlist
-  game.start_game()
-  guesses = 0
-  while guesses < 6:
-    guess = input("Enter guess: ")
-    results = game.guess_word(guess)
-    state = state.next(results, guess)
-    print(f'Guessed word: {guess}, Result: {results}')
-  print('Remaining words:', state.unguessed_words)
-  print('Remaining words contains answer:', game.active_word in state.unguessed_words)
-  print('\n')
-  state.print_all()
-  game.reveal_word()
-   
-  
-
-if __name__ == '__main__':
-
-  game = Game() 
-  player = Rando()
-  game.play(player)
-
