@@ -45,7 +45,7 @@ class Game:
       return [-1, -1, -1, -1, -1]
     
     if guess not in self.wlist:
-      print("Word is not in list.")
+      message = "Word is not in list."
       return [-1,-1,-1,-1,-1]
 
     # If the guessed word is not 5 letters long
