@@ -209,7 +209,7 @@ class State():
       word_stack.iloc[n, 1] = h
     column = word_stack["h"]
     min_h = column.idxmin()
-    print('best guess', word_stack.iloc[min_h, 0], word_stack.iloc[min_h, 1])
+    print('best guess', word_stack.iloc[min_h, 0], 'heuristic=', word_stack.iloc[min_h, 1])
     return(word_stack.iloc[min_h, 0])
   
   def print_all(self):
