@@ -44,7 +44,7 @@ class Game:
     self.guesses = 6
     result = [-1, -1, -1, -1, -1]
     while self.guesses != 0:
-      guess = player.get_guess(result, self)
+      guess = player.get_guess(result, self.active_word)
       result = self.guess_word(guess)
       print(f'Result: {result}, Remaining guesses: {self.guesses}')
       player.trim_list(result, guess)
