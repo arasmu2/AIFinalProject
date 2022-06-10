@@ -91,10 +91,10 @@ class Computer(Player):
 
 #    self.lprob = pd.read_csv('letter_prob.csv', header=0, index_col='Letter')
 
-  def get_guess(self, result, game):
+  def get_guess(self, result, check):
     if result == [-1, -1, -1, -1, -1]:
       return random.choice(self.word_list)
-    return self.heuristics(result, game)
+    return self.heuristics(result, check)
 
   
   def heuristics(self, result, check):
