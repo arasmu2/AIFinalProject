@@ -30,10 +30,10 @@ class Game:
     self.guesses = 6
     results = [-1,-1,-1,-1]
     while results != [2,2,2,2,2] and  self.guesses > 0:
-      results = self.guess_word(input("Enter guess: "))
-      if results != [-1,-1,-1,-1]:
-        self.guesses = self.guesses -1
-      print(f'Result: {results}, Remaining guesses: {self.guesses}')
+      guess = input("Enter guess: ")
+      results = self.guess_word(guess)
+      print("Guess: " + guess)
+#      print(f'Result: {results}, Remaining guesses: {self.guesses}')
       score = self.guesses
     self.reveal_word() 
     return score
@@ -49,8 +49,9 @@ class Game:
     result = [-1, -1, -1, -1, -1]
     while result != [2,2,2,2,2] and self.guesses > 0:
       guess = player.get_guess(result, self.active_word)
+      print("Guess: " + guess)
       result = self.guess_word(guess)
-      print(f'Result: {result}, Remaining guesses: {self.guesses}')
+#      print(f'Result: {result}, Remaining guesses: {self.guesses}')
       player.trim_list(result, guess)
       score = self.guesses
     self.reveal_word()   
