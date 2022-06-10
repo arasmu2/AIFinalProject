@@ -1,14 +1,134 @@
 import random 
-import pandas as pd
-import numpy as np
 
 from game import WRONG_LETTER, CORRECT_LETTER, CORRECT_SPOT
 
 class Player(object):
   def __init__(self) -> None:
     self.kind = "HUMAN"
+ 
+  def trim_list(self, result, guess):
+    pass
+
+  def load_word_list(self):
+    with open('word_list.txt') as f:
+      for l in f:
+        self.word_list.append(l.rstrip())
+
+
+class Computer(Player):
+  def __init__(self) -> None:
+    self.kind = "COMPUTER"
     self.letter_lists = ["abcdefghijklmnopqrstuvwxyz",]*5
     self.wrong_place = ''
+    self.word_list = []
+    self.load_word_list()
+    self.lprob = {}
+    self.load_letter_prob()
+
+  def load_letter_prob(self):
+    with open('letter_prob.txt') as f:
+      for l in f:
+        letter = l[0]
+        l = l[1::]
+        l = l[1::]
+        self.lprob[letter] = float(l)
+
+
+#    self.lprob = pd.read_csv('letter_prob.csv', header=0, index_col='Letter')
+
+  def get_guess(self, result, game):
+    if result == [-1, -1, -1, -1, -1]:
+      return random.choice(self.word_list)
+    return self.heuristics(result, game)
+
+
+  def trim_list(self, result, guess):
+    if result == [-1, -1, -1, -1, -1]:
+      return
+    for x in range(5):
+      if result[x] == CORRECT_SPOT:
+        self.remove_words_without_at(guess[x], x)
+      elif result[x] == CORRECT_LETTER:
+        self.remove_words_without(guess[x])
+      elif result[x] == WRONG_LETTER:
+        self.remove_words_with(guess[x])
+
+  
+  def remove_words_with(self, letter):
+    '''
+    Filters guess list with words that contain letter that must not be included
+    '''
+    for word in self.word_list:
+      if letter in word:
+        self.word_list.remove(word)
+
+
+
+  def remove_words_without(self, letter):
+    '''
+    Filters guess list with words that don't contain letter required character
+    '''
+    for word in self.word_list:
+      if letter not in word:
+        self.word_list.remove(word)
+
+
+  def remove_words_without_at(self, letter, index):
+    '''
+    Filters guess list without letter at index
+    '''
+    for word in self.word_list:
+      if word[index] is not letter:
+        self.word_list.remove(word)
+
+  
+  def heuristics(self, result, game):
+    #num = len(self.word_list)
+    word_stack = {}
+    for word in self.word_list:
+      word_stack[word] = 0.0
+    #word_stack = pd.DataFrame({'words': pd.Series(self.word_list), 'h': pd.Series((np.zeros(num)), dtype=float)})
+
+    for guess in self.word_list:
+    #for n in range(0, num):
+      h = 10
+      compare_to = game.active_word
+      #guess = self.word_list[n]
+      for i in range(0, 5):
+        if (result[i] == 2):
+          if (guess[i] == compare_to[i]):
+            h = h - 2
+        elif (result[i] == 1):
+          for j in range(0, 5):
+            if (guess[j] == compare_to[i]):
+              h = h - 1
+        else:
+          l_value = self.lprob[guess[i]]
+          #l_value =  self.lprob.loc[self.word_list[n][i]]  # find probabability set to zero for h1
+          h = h - l_value
+
+      word_stack[guess] = h
+    column = []
+    for word in self.word_list:
+      column.append(word_stack[word])
+    #column = word_stack["h"]
+    min_h = min(column)
+    min_guesses = [key for key in word_stack if word_stack[key] == min_h]
+    return random.choice(min_guesses)
+    #min_h = column.idxmin()
+    #valid_min = word_stack[word_stack.h == column[min_h]]
+    #print('best guess', word_stack.iloc[min_h, 0], word_stack.iloc[min_h, 1])
+    #return (word_stack.iloc[min_h, 0])
+    #return (word_stack.iloc[rnd.randint(0,num-1), 0])
+
+
+class Rando(Player):
+  def __init__(self) -> None:
+    self.kind = "RANDOM"
+    self.letter_lists = ["abcdefghijklmnopqrstuvwxyz",]*5
+    self.wrong_place = ''
+    self.word_list = []
+    self.load_word_list()
 
   def trim_list(self, result, guess):
     for i in range(0,5):
@@ -23,23 +143,9 @@ class Player(object):
     #  print(guess[i], result[i], self.letter_lists[i])
 
 
-
-class Computer(Player):
-  def __init__(self) -> None:
-    self.kind = "COMPUTER"
-    self.letter_lists = ["abcdefghijklmnopqrstuvwxyz",]*5
-
-
-class Rando(Player):
-  def __init__(self) -> None:
-    self.kind = "RANDOM"
-    self.letter_lists = ["abcdefghijklmnopqrstuvwxyz",]*5
-    self.wrong_place = ''
-
-    
-  def get_guess(self, word_list):
+  def get_guess(self, result):
     guess = ''
-    while guess not in word_list:
+    while guess not in self.word_list:
       guess = ''
       for i in range(0,5):
         list = self.letter_lists[i]
@@ -52,96 +158,6 @@ class Rando(Player):
     return guess
 
 
-
-class State():
-  def __init__(self, previous=None):
-    self.previous = previous # pointer to previous state
-    self.guess = ''          # guess leading to this state
-    self.rejected = []       # letters guessed but are not in solution
-    self.wrong_spot = []     # correct letters in wrong spots
-    self.correct = []        # correct letters in the right spot, (index, char)
-    self.unguessed_words = []
-
-  def next(self, results, guess):
-    '''
-    Creates the next state after this one given the updated information
-      results (int[]): results from a guess
-      guess (string): word guessed
-      Return: State
-    '''
-    if results == [-1, -1, -1, -1, -1]:
-      return self
-
-    next = State(self)
-    next.unguessed_words = self.unguessed_words.copy()
-    next.guess = guess
-    for x in range(5):
-      if results[x] == CORRECT_SPOT:
-        next.correct.append((x, guess[x]))
-        next.remove_words_without_at(guess[x], x)
-      elif results[x] == CORRECT_LETTER:
-        next.wrong_spot.append(guess[x])
-        next.remove_words_without(guess[x])
-      elif results[x] == WRONG_LETTER:
-        next.rejected.append(guess[x])
-        next.remove_words_with(guess[x])
-
-    return next
-
-  def remove_words_with(self, c):
-    '''
-    Filters guess list with words that contain c
-      c (char): character that must not be included
-    '''
-    for word in self.unguessed_words:
-      if c in word:
-        self.unguessed_words.remove(word)
-
-  def remove_words_without(self, c):
-    '''
-    Filters guess list with words that don't contain c
-      c (char): required character
-    '''
-    for word in self.unguessed_words:
-      if c not in word:
-        self.unguessed_words.remove(word)
-
-  def remove_words_without_at(self, c, index):
-    '''
-    Filters guess list without c at index
-      c (char): required character
-      index (int): index of requred character
-    '''
-    for word in self.unguessed_words:
-      if word[index] is not c:
-        self.unguessed_words.remove(word)
-
-  
-  def heuristics(self, game, results):
-    num = len(self.unguessed_words)
-    word_stack = pd.DataFrame({'words': pd.Series(self.unguessed_words), 'h': pd.Series((np.zeros(num)), dtype=float)})
-
-    for n in range(0, num):
-      h = 10
-      compare_to = list(game.active_word)
-      guess = list(self.unguessed_words[n])
-      for i in range(0, 5):
-        if (results[i] == 2):
-          if (guess[i] == compare_to[i]):
-            h = h - 2
-        elif (results[i] == 1):
-          for j in range(0, 5):
-            if (guess[j] == compare_to[i]):
-              h = h - 1
-        else:
-          l_value = game.lprob.loc[self.unguessed_words[n][i]]  # find probabability
-          h = h - l_value
-
-      word_stack.iloc[n, 1] = h
-    column = word_stack["h"]
-    min_h = column.idxmin()
-    print('best guess', word_stack.iloc[min_h, 0], 'heuristic=', word_stack.iloc[min_h, 1])
-    return(word_stack.iloc[min_h, 0])
   
   def print_all(self):
     print('Guesses:', self.all_guesses())

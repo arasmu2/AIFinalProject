@@ -210,6 +210,6 @@ def human_play():
 if __name__ == '__main__':
 
   game = Game() 
-  player = Rando()
+  player = Computer()
   game.play(player)
 

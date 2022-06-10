@@ -42,8 +42,9 @@ class Game:
     w = rnd.randint(0, l)
     self.active_word = self.wlist[w]
     self.guesses = 6
+    result = [-1, -1, -1, -1, -1]
     while self.guesses != 0:
-      guess = player.get_guess(self.wlist)
+      guess = player.get_guess(result, self)
       result = self.guess_word(guess)
       print(f'Result: {result}, Remaining guesses: {self.guesses}')
       player.trim_list(result, guess)
