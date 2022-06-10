@@ -28,11 +28,15 @@ class Game:
     w = rnd.randint(0, l)
     self.active_word = self.wlist[w]
     self.guesses = 6
-    while self.guesses != 0:
-      results = self.guess_word(input("Enter guess: "))
-      print(f'Result: {results}, Remaining guesses: {self.guesses}')
-    self.reveal_word()   
-    return True
+    results = [-1,-1,-1,-1]
+    while results != [2,2,2,2,2] and  self.guesses > 0:
+      guess = input("Enter guess: ")
+      results = self.guess_word(guess)
+      print("Guess: " + guess)
+#      print(f'Result: {results}, Remaining guesses: {self.guesses}')
+      score = self.guesses
+    self.reveal_word() 
+    return score
 
   # Start a new game by choosing a random word and resetting the guess counter
   def play(self, player):
@@ -43,13 +47,15 @@ class Game:
     self.active_word = self.wlist[w]
     self.guesses = 6
     result = [-1, -1, -1, -1, -1]
-    while self.guesses != 0:
-      guess = player.get_guess(result, self)
+    while result != [2,2,2,2,2] and self.guesses > 0:
+      guess = player.get_guess(result, self.active_word)
+      print("Guess: " + guess)
       result = self.guess_word(guess)
-      print(f'Result: {result}, Remaining guesses: {self.guesses}')
+#      print(f'Result: {result}, Remaining guesses: {self.guesses}')
       player.trim_list(result, guess)
+      score = self.guesses
     self.reveal_word()   
-    return True
+    return score 
 
   # Take in a guess and return a score and remaining moves
   def guess_word(self, guess):
@@ -75,7 +81,6 @@ class Game:
     if guess == self.active_word:
       message = '\x1b[6;30;42m' + 'Correct!' + '\x1b[0m'
       result = [2,2,2,2,2]
-      self.guesses = 0
 
     else:
       result = [0,0,0,0,0]
@@ -100,7 +105,6 @@ class Game:
   # Reveal the active word and set guess counter to zero
   def reveal_word(self):
     print(f'The word was: {self.active_word}')
-    self.guesses = 0
 
   # Print the board
   def print_board(self):

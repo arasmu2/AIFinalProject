@@ -5,41 +5,16 @@ from game import WRONG_LETTER, CORRECT_LETTER, CORRECT_SPOT
 class Player(object):
   def __init__(self) -> None:
     self.kind = "HUMAN"
- 
-  def trim_list(self, result, guess):
-    pass
+    self.letter_lists = ["abcdefghijklmnopqrstuvwxyz",]*5
+    self.wrong_place = ''
+    self.word_list = []
+    self.load_word_list()
+
 
   def load_word_list(self):
     with open('word_list.txt') as f:
       for l in f:
         self.word_list.append(l.rstrip())
-
-
-class Computer(Player):
-  def __init__(self) -> None:
-    self.kind = "COMPUTER"
-    self.letter_lists = ["abcdefghijklmnopqrstuvwxyz",]*5
-    self.wrong_place = ''
-    self.word_list = []
-    self.load_word_list()
-    self.lprob = {}
-    self.load_letter_prob()
-
-  def load_letter_prob(self):
-    with open('letter_prob.txt') as f:
-      for l in f:
-        letter = l[0]
-        l = l[1::]
-        l = l[1::]
-        self.lprob[letter] = float(l)
-
-
-#    self.lprob = pd.read_csv('letter_prob.csv', header=0, index_col='Letter')
-
-  def get_guess(self, result, game):
-    if result == [-1, -1, -1, -1, -1]:
-      return random.choice(self.word_list)
-    return self.heuristics(result, game)
 
 
   def trim_list(self, result, guess):
@@ -52,6 +27,18 @@ class Computer(Player):
         self.remove_words_without(guess[x])
       elif result[x] == WRONG_LETTER:
         self.remove_words_with(guess[x])
+ 
+    for i in range(0,5):
+      if result[i] == CORRECT_SPOT:
+        self.letter_lists[i] = guess[i]
+      if result[i] == CORRECT_LETTER:
+        self.letter_lists[i] = self.letter_lists[i].replace(guess[i], '')
+        self.wrong_place = self.wrong_place + guess[i]
+      if result[i] == WRONG_LETTER:
+        for j in range(0,5):
+          self.letter_lists[j] = self.letter_lists[j].replace(guess[i],'') 
+    #  print(guess[i], result[i], self.letter_lists[i])
+
 
   
   def remove_words_with(self, letter):
@@ -81,8 +68,36 @@ class Computer(Player):
       if word[index] is not letter:
         self.word_list.remove(word)
 
+
+
+class Computer(Player):
+  def __init__(self) -> None:
+    self.kind = "COMPUTER"
+    self.letter_lists = ["abcdefghijklmnopqrstuvwxyz",]*5
+    self.wrong_place = ''
+    self.word_list = []
+    self.load_word_list()
+    self.lprob = {}
+    self.load_letter_prob()
+
+  def load_letter_prob(self):
+    with open('letter_prob.txt') as f:
+      for l in f:
+        letter = l[0]
+        l = l[1::]
+        l = l[1::]
+        self.lprob[letter] = float(l)
+
+
+#    self.lprob = pd.read_csv('letter_prob.csv', header=0, index_col='Letter')
+
+  def get_guess(self, result, check):
+    if result == [-1, -1, -1, -1, -1]:
+      return random.choice(self.word_list)
+    return self.heuristics(result, check)
+
   
-  def heuristics(self, result, game):
+  def heuristics(self, result, check):
     #num = len(self.word_list)
     word_stack = {}
     for word in self.word_list:
@@ -92,7 +107,7 @@ class Computer(Player):
     for guess in self.word_list:
     #for n in range(0, num):
       h = 10
-      compare_to = game.active_word
+      compare_to = check
       #guess = self.word_list[n]
       for i in range(0, 5):
         if (result[i] == 2):
@@ -130,20 +145,8 @@ class Rando(Player):
     self.word_list = []
     self.load_word_list()
 
-  def trim_list(self, result, guess):
-    for i in range(0,5):
-      if result[i] == CORRECT_SPOT:
-        self.letter_lists[i] = guess[i]
-      if result[i] == CORRECT_LETTER:
-        self.letter_lists[i] = self.letter_lists[i].replace(guess[i], '')
-        self.wrong_place = self.wrong_place + guess[i]
-      if result[i] == WRONG_LETTER:
-        for j in range(0,5):
-          self.letter_lists[j] = self.letter_lists[j].replace(guess[i],'') 
-    #  print(guess[i], result[i], self.letter_lists[i])
 
-
-  def get_guess(self, result):
+  def get_guess(self, result, check):
     guess = ''
     while guess not in self.word_list:
       guess = ''
