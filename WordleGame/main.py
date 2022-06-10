@@ -4,7 +4,12 @@ from player import Computer, Rando, Player
 
 if __name__ == '__main__':
 
-  game = Game()
-  player = Computer()
-  game.play(player)
+  score = []
+  for i in range(0, 50):
+    game = Game()
+    player = Computer()
+    score.append(game.play(player))
 
+  with open('result.txt', 'w+') as f:
+    f.write(str(score))
+    f.close()
